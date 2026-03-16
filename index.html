@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPay - Sistem Penggajian Kru Dekorasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .nav-link.active { background-color: #2563eb; color: white; }
+        .no-print { transition: all 0.2s; }
+        [onclick] { cursor: pointer; }
+        
+        /* Modal Animation */
+        .modal { transition: opacity 0.25s ease; z-index: 100; }
+        body.modal-active { overflow: hidden; }
+
+        /* Slip Gaji Styling */
+        .slip-font { font-family: 'Courier Prime', monospace; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-only { display: block !important; }
+            .main-content { padding: 0 !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            .modal { position: relative !important; opacity: 1 !important; pointer-events: auto !important; }
+            .bg-opacity-80 { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 no-print">
+            <div class="p-6 text-2xl font-bold border-b border-slate-800 flex items-center gap-2">
+                <i class="fas fa-coins text-yellow-400"></i> EventPay
+            </div>
+            <nav class="p-4 space-y-1" id="main-nav">
+                <button onclick="showPage('beranda')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3 active">
+                    <i class="fas fa-home w-5"></i> Beranda
+                </button>
+                <button onclick="showPage('event')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3">
+                    <i class="fas fa-calendar-alt w-5"></i> Event
+                </button>
+                <button onclick="showPage('pekerja')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3">
+                    <i class="fas fa-user-friends w-5"></i> Pekerja
+                </button>
+                <button onclick="showPage('jenis-pekerjaan')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3">
+                    <i class="fas fa-tags w-5"></i> Jenis Pekerjaan
+                </button>
+                <button onclick="showPage('partisipasi')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3">
+                    <i class="fas fa-clipboard-list w-5"></i> Partisipasi
+                </button>
+                <button onclick="showPage('rekap')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3">
+                    <i class="fas fa-money-check-alt w-5"></i> Rekap Gaji
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8 main-content">
+            <div id="content-area" class="max-w-6xl mx-auto">
+                <!-- Content Injected Here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Event, Pekerja, Job tetap sama) -->
+    <div id="modal-event" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
+        <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-event')"></div>
+        <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+            <div class="py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-slate-800" id="modal-event-title">Tambah Event</p>
+                    <div class="cursor-pointer z-50" onclick="toggleModal('modal-event')">
+                        <i class="fas fa-times text-slate-400"></i>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <input type="hidden" id="event-id">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Event</label>
+                        <input type="text" id="event-nama" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Contoh: Pernikahan Romadhani">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Tanggal</label>
+                        <input type="date" id="event-tanggal" class="w-full p-3 border rounded-lg bg-slate-50 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Lokasi</label>
+                        <input type="text" id="event-lokasi" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Lokasi acara">
+                    </div>
+                </div>
+                <div class="flex justify-end pt-6 space-x-3">
+                    <button onclick="toggleModal('modal-event')" class="px-4 py-2 text-slate-500 font-bold">Batal</button>
+                    <button onclick="saveEvent()" class="px-6 py-2 bg-blue-600 rounded-lg text-white font-bold shadow-lg">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pekerja" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
+        <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-pekerja')"></div>
+        <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+            <div class="py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-slate-800" id="modal-pekerja-title">Tambah Pekerja</p>
+                    <div class="cursor-pointer z-50" onclick="toggleModal('modal-pekerja')">
+                        <i class="fas fa-times text-slate-400"></i>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <input type="hidden" id="pekerja-id">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Lengkap</label>
+                        <input type="text" id="pekerja-nama" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Masukkan nama pekerja">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nomor Telepon/WA</label>
+                        <input type="text" id="pekerja-telp" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Contoh: 08123456789">
+                    </div>
+                </div>
+                <div class="flex justify-end pt-6 space-x-3">
+                    <button onclick="toggleModal('modal-pekerja')" class="px-4 py-2 text-slate-500 font-bold">Batal</button>
+                    <button onclick="savePekerja()" class="px-6 py-2 bg-blue-600 rounded-lg text-white font-bold shadow-lg">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-job" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
+        <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-job')"></div>
+        <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+            <div class="py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-slate-800" id="modal-job-title">Tambah Jenis Pekerjaan</p>
+                    <div class="cursor-pointer z-50" onclick="toggleModal('modal-job')">
+                        <i class="fas fa-times text-slate-400"></i>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <input type="hidden" id="job-id">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Kategori</label>
+                        <input type="text" id="job-nama" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Contoh: Dekor Utama">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Tarif Bayaran (IDR)</label>
+                        <input type="number" id="job-tarif" class="w-full p-3 border rounded-lg bg-slate-50 outline-none" placeholder="Nominal tarif">
+                    </div>
+                </div>
+                <div class="flex justify-end pt-6 space-x-3">
+                    <button onclick="toggleModal('modal-job')" class="px-4 py-2 text-slate-500 font-bold">Batal</button>
+                    <button onclick="saveJob()" class="px-6 py-2 bg-blue-600 rounded-lg text-white font-bold shadow-lg">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Slip Gaji -->
+    <div id="modal-slip" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
+        <div class="absolute w-full h-full bg-slate-900 bg-opacity-80" onclick="toggleModal('modal-slip')"></div>
+        <div class="bg-white w-full max-w-2xl mx-auto rounded-lg shadow-2xl z-50 overflow-y-auto relative p-8">
+            <div class="absolute top-4 right-4 no-print">
+                <button onclick="toggleModal('modal-slip')" class="text-slate-400 hover:text-slate-600 text-xl p-2"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="slip-content" class="slip-font text-slate-900">
+                <!-- Slip Content Injected Here -->
+            </div>
+
+            <div class="mt-8 flex justify-center gap-4 no-print">
+                <button onclick="window.print()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold">
+                    <i class="fas fa-print mr-2"></i> Cetak Slip Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 hidden bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl z-50 border border-slate-700">
+        Berhasil!
+    </div>
+
+    <script>
+        // --- DATA ENGINE ---
+        let state = {
+            events: JSON.parse(localStorage.getItem('ep_events')) || [],
+            pekerja: JSON.parse(localStorage.getItem('ep_pekerja')) || [],
+            jenisPekerjaan: JSON.parse(localStorage.getItem('ep_jobs')) || [],
+            partisipasi: JSON.parse(localStorage.getItem('ep_partisipasi')) || [],
+            selectedMonth: new Date().toISOString().slice(0, 7)
+        };
+
+        function saveState() {
+            localStorage.setItem('ep_events', JSON.stringify(state.events));
+            localStorage.setItem('ep_pekerja', JSON.stringify(state.pekerja));
+            localStorage.setItem('ep_jobs', JSON.stringify(state.jenisPekerjaan));
+            localStorage.setItem('ep_partisipasi', JSON.stringify(state.partisipasi));
+        }
+
+        function showToast(msg, color = 'bg-slate-800') {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = `fixed bottom-5 right-5 ${color} text-white px-6 py-3 rounded-xl shadow-2xl z-50 transition-all duration-300`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if(!modal) return;
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        // --- ROUTER ---
+        function showPage(pageId) {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if(link.getAttribute('onclick').includes(pageId)) link.classList.add('active');
+            });
+
+            switch(pageId) {
+                case 'beranda': renderBeranda(); break;
+                case 'event': renderEvent(); break;
+                case 'pekerja': renderPekerja(); break;
+                case 'jenis-pekerjaan': renderJenisPekerjaan(); break;
+                case 'partisipasi': renderPartisipasi(); break;
+                case 'rekap': renderRekap(); break;
+            }
+        }
+
+        function renderBeranda() {
+            const totalGaji = state.partisipasi.reduce((acc, curr) => {
+                const job = state.jenisPekerjaan.find(j => j.id == curr.jobId);
+                return acc + (job ? job.tarif : 0);
+            }, 0);
+
+            document.getElementById('content-area').innerHTML = `
+                <h1 class="text-3xl font-bold text-slate-800 mb-6 uppercase">Dashboard</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="card p-6 border-l-4 border-blue-500">
+                        <p class="text-slate-500 text-sm font-bold uppercase">Total Event</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1">${state.events.length}</h3>
+                    </div>
+                    <div class="card p-6 border-l-4 border-emerald-500">
+                        <p class="text-slate-500 text-sm font-bold uppercase">Total Pekerja</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1">${state.pekerja.length}</h3>
+                    </div>
+                    <div class="card p-6 border-l-4 border-amber-500">
+                        <p class="text-slate-500 text-sm font-bold uppercase">Total Kas Keluar</p>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1">${formatIDR(totalGaji)}</h3>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEvent() {
+            document.getElementById('content-area').innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-slate-800 uppercase">Daftar Event</h1>
+                    <button onclick="openEventModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-blue-700">
+                        <i class="fas fa-plus mr-2"></i> Tambah Event
+                    </button>
+                </div>
+                <div class="card overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-4 text-xs font-bold uppercase text-slate-500">Nama Event</th><th class="p-4 text-xs font-bold uppercase text-slate-500">Tanggal</th><th class="p-4 text-xs font-bold uppercase text-slate-500 text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${state.events.map(e => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-4 font-bold text-slate-700 uppercase">${e.nama}</td>
+                                    <td class="p-4 text-slate-600">${e.tanggal}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button onclick="openEventModal('${e.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg"><i class="fas fa-edit"></i></button>
+                                        <button onclick="deleteGeneral('events', '${e.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="3" class="p-10 text-center text-slate-400">Kosong</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderPekerja() {
+            document.getElementById('content-area').innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-slate-800 uppercase">Database Pekerja</h1>
+                    <button onclick="openPekerjaModal()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-emerald-700">
+                        <i class="fas fa-user-plus mr-2"></i> Tambah Pekerja
+                    </button>
+                </div>
+                <div class="card overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-4 text-xs font-bold uppercase text-slate-500">Nama Lengkap</th><th class="p-4 text-xs font-bold uppercase text-slate-500">Telepon</th><th class="p-4 text-xs font-bold uppercase text-slate-500 text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${state.pekerja.map(p => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-4 font-bold text-slate-700 uppercase">${p.nama}</td>
+                                    <td class="p-4 text-slate-600">${p.telepon || '-'}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button onclick="openPekerjaModal('${p.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg"><i class="fas fa-edit"></i></button>
+                                        <button onclick="deleteGeneral('pekerja', '${p.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="3" class="p-10 text-center text-slate-400">Kosong</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderJenisPekerjaan() {
+            document.getElementById('content-area').innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-slate-800 uppercase">Tarif Pekerjaan</h1>
+                    <button onclick="openJobModal()" class="bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-amber-700">
+                        <i class="fas fa-tags mr-2"></i> Tambah Kategori
+                    </button>
+                </div>
+                <div class="card overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-4 text-xs font-bold uppercase text-slate-500">Kategori Pekerjaan</th><th class="p-4 text-xs font-bold uppercase text-slate-500">Tarif</th><th class="p-4 text-xs font-bold uppercase text-slate-500 text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${state.jenisPekerjaan.map(j => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-4 font-bold text-slate-700 uppercase">${j.nama}</td>
+                                    <td class="p-4 text-emerald-600 font-bold">${formatIDR(j.tarif)}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button onclick="openJobModal('${j.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg"><i class="fas fa-edit"></i></button>
+                                        <button onclick="deleteGeneral('jenisPekerjaan', '${j.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="3" class="p-10 text-center text-slate-400">Kosong</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderPartisipasi() {
+            document.getElementById('content-area').innerHTML = `
+                <h1 class="text-3xl font-bold text-slate-800 mb-6 uppercase">Catat Kehadiran</h1>
+                <div class="card p-6 bg-white border-2 border-dashed border-slate-200 mb-8 no-print">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Event</label>
+                            <select id="sel-event" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
+                                ${state.events.map(e => `<option value="${e.id}">${e.nama}</option>`).join('') || '<option disabled>Input Event Dulu</option>'}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Pekerja</label>
+                            <select id="sel-worker" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
+                                ${state.pekerja.map(p => `<option value="${p.id}">${p.nama}</option>`).join('') || '<option disabled>Input Pekerja Dulu</option>'}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tugas</label>
+                            <select id="sel-job" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
+                                ${state.jenisPekerjaan.map(j => `<option value="${j.id}">${j.nama} - ${formatIDR(j.tarif)}</option>`).join('') || '<option disabled>Input Jenis Kerja Dulu</option>'}
+                            </select>
+                        </div>
+                        <button onclick="savePartisipasi()" class="bg-slate-900 text-white p-3.5 rounded-xl hover:bg-black font-bold uppercase text-sm">Catat Data</button>
+                    </div>
+                </div>
+                <div class="card overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-100 border-b">
+                            <tr><th class="p-4">Event</th><th class="p-4">Pekerja</th><th class="p-4">Tugas</th><th class="p-4">Bayaran</th><th class="p-4 text-center">Aksi</th></tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${state.partisipasi.map((p, idx) => {
+                                const event = state.events.find(e => e.id == p.eventId);
+                                const worker = state.pekerja.find(w => w.id == p.workerId);
+                                const job = state.jenisPekerjaan.find(j => j.id == p.jobId);
+                                return `
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4 text-slate-500 text-sm">${event?.nama || 'N/A'}</td>
+                                        <td class="p-4 font-bold text-slate-700 uppercase">${worker?.nama || 'N/A'}</td>
+                                        <td class="p-4 italic text-slate-600">${job?.nama || 'N/A'}</td>
+                                        <td class="p-4 text-emerald-700 font-bold">${formatIDR(job?.tarif || 0)}</td>
+                                        <td class="p-4 text-center">
+                                            <button onclick="deletePartisipasi(${idx})" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).reverse().join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-300">Belum ada data</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderRekap() {
+            const rekap = {};
+            const filterMonth = state.selectedMonth;
+
+            state.partisipasi.forEach(p => {
+                const event = state.events.find(e => e.id == p.eventId);
+                if (event && event.tanggal.startsWith(filterMonth)) {
+                    if(!rekap[p.workerId]) rekap[p.workerId] = { id: p.workerId, total: 0, count: 0, items: [] };
+                    const job = state.jenisPekerjaan.find(j => j.id == p.jobId);
+                    if (job) {
+                        rekap[p.workerId].total += job.tarif;
+                        rekap[p.workerId].count += 1;
+                        rekap[p.workerId].items.push({ event, job });
+                    }
+                }
+            });
+
+            document.getElementById('content-area').innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h1 class="text-3xl font-bold text-slate-800 uppercase">Rekapitulasi Gaji</h1>
+                    <div class="flex items-center gap-3 no-print">
+                        <label class="text-sm font-bold text-slate-500 uppercase">Periode:</label>
+                        <input type="month" id="filter-month" value="${state.selectedMonth}" 
+                               onchange="updateMonth(this.value)" 
+                               class="p-2 border rounded-lg font-bold text-blue-600">
+                    </div>
+                </div>
+
+                <div class="card overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-900 text-white">
+                            <tr>
+                                <th class="p-5">Pekerja</th>
+                                <th class="p-5">Event</th>
+                                <th class="p-5">Pendapatan</th>
+                                <th class="p-5 text-right no-print">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${Object.values(rekap).map(r => {
+                                const worker = state.pekerja.find(w => w.id == r.id);
+                                return `
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-5 font-bold uppercase text-slate-800">${worker?.nama || 'N/A'}</td>
+                                        <td class="p-5 text-slate-500 font-medium">${r.count} Kali</td>
+                                        <td class="p-5 font-bold text-emerald-600">${formatIDR(r.total)}</td>
+                                        <td class="p-5 text-right no-print space-x-2 flex justify-end">
+                                            <button onclick='generateSlip("${r.id}", "${state.selectedMonth}")' class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-black">
+                                                <i class="fas fa-print mr-1"></i> Cetak
+                                            </button>
+                                            <button onclick='shareWA("${r.id}", "${state.selectedMonth}")' class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700">
+                                                <i class="fab fa-whatsapp mr-1"></i> Share WA
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('') || '<tr><td colspan="4" class="p-20 text-center text-slate-400 italic">Data kosong untuk periode ini</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function updateMonth(val) {
+            state.selectedMonth = val;
+            renderRekap();
+        }
+
+        function formatMonthLabel(val) {
+            const date = new Date(val + "-01");
+            return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        }
+
+        // --- WHATSAPP SHARER ---
+        function shareWA(workerId, monthFilter) {
+            const worker = state.pekerja.find(w => w.id == workerId);
+            if(!worker || !worker.telepon) return alert("Nomor WA pekerja tidak ditemukan!");
+
+            const data = state.partisipasi.filter(p => {
+                const event = state.events.find(e => e.id == p.eventId);
+                return p.workerId == workerId && event && event.tanggal.startsWith(monthFilter);
+            });
+
+            const periode = formatMonthLabel(monthFilter);
+            let total = 0;
+            let listEvent = "";
+
+            data.forEach((p, i) => {
+                const event = state.events.find(e => e.id == p.eventId);
+                const job = state.jenisPekerjaan.find(j => j.id == p.jobId);
+                if(job) {
+                    total += job.tarif;
+                    listEvent += `${i+1}. *${event.nama}* (${job.nama}): ${formatIDR(job.tarif)}\n`;
+                }
+            });
+
+            let message = `*SLIP GAJI - EVENTPAY DECORATION*\n`;
+            message += `--------------------------------------------\n`;
+            message += `Nama: *${worker.nama.toUpperCase()}*\n`;
+            message += `Periode: *${periode}*\n\n`;
+            message += `*Rincian Kerja:*\n${listEvent}\n`;
+            message += `*TOTAL DITERIMA: ${formatIDR(total)}*\n`;
+            message += `--------------------------------------------\n`;
+            message += `_Terima kasih atas kerja kerasnya!_`;
+
+            const encodedMsg = encodeURIComponent(message);
+            const cleanPhone = worker.telepon.replace(/\D/g, '');
+            const phoneFinal = cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) : cleanPhone;
+
+            window.open(`https://wa.me/${phoneFinal}?text=${encodedMsg}`, '_blank');
+        }
+
+        // --- SLIP PREVIEW & PRINT ---
+        function generateSlip(workerId, monthFilter) {
+            const worker = state.pekerja.find(w => w.id == workerId);
+            const data = state.partisipasi.filter(p => {
+                const event = state.events.find(e => e.id == p.eventId);
+                return p.workerId == workerId && event && event.tanggal.startsWith(monthFilter);
+            });
+            
+            let total = 0;
+            let itemsHtml = "";
+            
+            data.forEach((p) => {
+                const event = state.events.find(e => e.id == p.eventId);
+                const job = state.jenisPekerjaan.find(j => j.id == p.jobId);
+                if(job) {
+                    total += job.tarif;
+                    itemsHtml += `
+                        <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                            <div>
+                                <div class="font-bold uppercase">${event?.nama || 'N/A'}</div>
+                                <div class="text-[10px] text-slate-500">${event?.tanggal || ''} | ${job.nama}</div>
+                            </div>
+                            <div class="font-bold text-right">${formatIDR(job.tarif)}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            const dateNow = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+            const periodeLabel = formatMonthLabel(monthFilter);
+
+            document.getElementById('slip-content').innerHTML = `
+                <div class="text-center mb-6 border-b-2 border-slate-900 pb-4">
+                    <h2 class="text-xl font-bold uppercase">EventPay Decoration</h2>
+                    <p class="text-[10px] italic">Sumenep, Madura - Jawa Timur</p>
+                </div>
+
+                <div class="mb-4 text-center">
+                    <span class="bg-slate-900 text-white px-3 py-1 text-[10px] font-bold rounded">SLIP GAJI ${periodeLabel}</span>
+                </div>
+
+                <div class="mb-6 flex justify-between text-xs">
+                    <div>
+                        <p class="text-slate-500 uppercase">Nama Kru:</p>
+                        <p class="text-lg font-bold uppercase">${worker?.nama || 'N/A'}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500 uppercase">Cetak:</p>
+                        <p class="font-bold">${dateNow}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-1 mb-6 min-h-[150px]">
+                    ${itemsHtml || '<div class="py-10 text-center text-slate-400">Rincian kosong</div>'}
+                </div>
+
+                <div class="bg-slate-100 p-4 rounded flex justify-between items-center mb-10">
+                    <span class="font-bold uppercase">Grand Total</span>
+                    <span class="text-xl font-bold text-blue-700">${formatIDR(total)}</span>
+                </div>
+
+                <div class="grid grid-cols-2 text-center text-[10px] mt-10">
+                    <div>
+                        <p class="mb-12">Penerima,</p>
+                        <p class="font-bold uppercase border-t pt-2 border-slate-300 mx-10">${worker?.nama || 'Penerima'}</p>
+                    </div>
+                    <div>
+                        <p class="mb-12">Bendahara,</p>
+                        <p class="font-bold uppercase border-t pt-2 border-slate-300 mx-10">Admin EventPay</p>
+                    </div>
+                </div>
+            `;
+
+            toggleModal('modal-slip');
+        }
+
+        // --- CRUD LOGIC (tetap sama) ---
+        function openEventModal(id = null) {
+            document.getElementById('event-id').value = id || "";
+            if (id) {
+                const event = state.events.find(e => e.id == id);
+                document.getElementById('modal-event-title').innerText = "Edit Event";
+                document.getElementById('event-nama').value = event.nama;
+                document.getElementById('event-tanggal').value = event.tanggal;
+                document.getElementById('event-lokasi').value = event.lokasi;
+            } else {
+                document.getElementById('modal-event-title').innerText = "Tambah Event";
+                document.getElementById('event-nama').value = "";
+                document.getElementById('event-tanggal').value = "";
+                document.getElementById('event-lokasi').value = "";
+            }
+            toggleModal('modal-event');
+        }
+
+        function saveEvent() {
+            const id = document.getElementById('event-id').value;
+            const nama = document.getElementById('event-nama').value;
+            const tanggal = document.getElementById('event-tanggal').value;
+            const lokasi = document.getElementById('event-lokasi').value;
+            if (!nama || !tanggal) return alert("Lengkapi data!");
+            if (id) {
+                const idx = state.events.findIndex(e => e.id == id);
+                state.events[idx] = { ...state.events[idx], nama, tanggal, lokasi };
+            } else {
+                state.events.push({ id: "ev-" + Date.now(), nama, tanggal, lokasi });
+            }
+            saveState(); toggleModal('modal-event'); renderEvent(); showToast("Event diperbarui");
+        }
+
+        function openPekerjaModal(id = null) {
+            document.getElementById('pekerja-id').value = id || "";
+            if (id) {
+                const p = state.pekerja.find(item => item.id == id);
+                document.getElementById('modal-pekerja-title').innerText = "Edit Pekerja";
+                document.getElementById('pekerja-nama').value = p.nama;
+                document.getElementById('pekerja-telp').value = p.telepon;
+            } else {
+                document.getElementById('modal-pekerja-title').innerText = "Tambah Pekerja";
+                document.getElementById('pekerja-nama').value = "";
+                document.getElementById('pekerja-telp').value = "";
+            }
+            toggleModal('modal-pekerja');
+        }
+
+        function savePekerja() {
+            const id = document.getElementById('pekerja-id').value;
+            const nama = document.getElementById('pekerja-nama').value;
+            const telp = document.getElementById('pekerja-telp').value;
+            if (!nama) return;
+            if (id) {
+                const idx = state.pekerja.findIndex(p => p.id == id);
+                state.pekerja[idx] = { ...state.pekerja[idx], nama, telepon: telp };
+            } else {
+                state.pekerja.push({ id: "wk-" + Date.now(), nama, telepon: telp });
+            }
+            saveState(); toggleModal('modal-pekerja'); renderPekerja(); showToast("Data pekerja disimpan");
+        }
+
+        function openJobModal(id = null) {
+            document.getElementById('job-id').value = id || "";
+            if (id) {
+                const j = state.jenisPekerjaan.find(item => item.id == id);
+                document.getElementById('modal-job-title').innerText = "Edit Kategori";
+                document.getElementById('job-nama').value = j.nama;
+                document.getElementById('job-tarif').value = j.tarif;
+            } else {
+                document.getElementById('modal-job-title').innerText = "Tambah Kategori";
+                document.getElementById('job-nama').value = "";
+                document.getElementById('job-tarif').value = "";
+            }
+            toggleModal('modal-job');
+        }
+
+        function saveJob() {
+            const id = document.getElementById('job-id').value;
+            const nama = document.getElementById('job-nama').value;
+            const tarif = document.getElementById('job-tarif').value;
+            if (!nama || !tarif) return;
+            if (id) {
+                const idx = state.jenisPekerjaan.findIndex(j => j.id == id);
+                state.jenisPekerjaan[idx] = { ...state.jenisPekerjaan[idx], nama, tarif: parseInt(tarif) };
+            } else {
+                state.jenisPekerjaan.push({ id: "jb-" + Date.now(), nama, tarif: parseInt(tarif) });
+            }
+            saveState(); toggleModal('modal-job'); renderJenisPekerjaan(); showToast("Tarif disimpan");
+        }
+
+        function deleteGeneral(type, id) {
+            if (confirm("Data akan dihapus permanen. Lanjutkan?")) {
+                state[type] = state[type].filter(item => item.id != id);
+                saveState();
+                showPage(type === 'jenisPekerjaan' ? 'jenis-pekerjaan' : (type === 'events' ? 'event' : type));
+            }
+        }
+
+        function savePartisipasi() {
+            const evId = document.getElementById('sel-event').value;
+            const wkId = document.getElementById('sel-worker').value;
+            const jbId = document.getElementById('sel-job').value;
+            if (!evId || !wkId || !jbId) return;
+            state.partisipasi.push({ eventId: evId, workerId: wkId, jobId: jbId });
+            saveState(); renderPartisipasi(); showToast("Absensi tercatat");
+        }
+
+        function deletePartisipasi(index) {
+            const realIdx = state.partisipasi.length - 1 - index;
+            state.partisipasi.splice(realIdx, 1);
+            saveState(); renderPartisipasi();
+        }
+
+        window.onload = () => showPage('beranda');
+
+    </script>
+</body>
+</html>
