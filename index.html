@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventPay - Sistem Penggajian Kru Dekorasi</title>
+    <title>MeyfaPay - Sistem Penggajian Kru Dekorasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -72,7 +72,7 @@
         </main>
     </div>
 
-    <!-- Modals (Event, Pekerja, Job tetap sama) -->
+    <!-- Modal Event -->
     <div id="modal-event" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
         <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-event')"></div>
         <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
@@ -106,6 +106,7 @@
         </div>
     </div>
 
+    <!-- Modal Pekerja -->
     <div id="modal-pekerja" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
         <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-pekerja')"></div>
         <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
@@ -135,6 +136,7 @@
         </div>
     </div>
 
+    <!-- Modal Jenis Pekerjaan -->
     <div id="modal-job" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center">
         <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleModal('modal-job')"></div>
         <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
@@ -224,12 +226,19 @@
             document.body.classList.toggle('modal-active');
         }
 
-        // --- ROUTER ---
+        // --- ROUTER FIX ---
         function showPage(pageId) {
             const navLinks = document.querySelectorAll('.nav-link');
+            
+            // Perbaikan: Gunakan Regex untuk mencocokkan ID secara eksak di dalam atribut onclick
+            // Ini mencegah 'pekerja' ikut aktif saat memilih 'jenis-pekerjaan'
+            const regex = new RegExp(`showPage\\(['"]${pageId}['"]\\)`);
+
             navLinks.forEach(link => {
                 link.classList.remove('active');
-                if(link.getAttribute('onclick').includes(pageId)) link.classList.add('active');
+                if(regex.test(link.getAttribute('onclick'))) {
+                    link.classList.add('active');
+                }
             });
 
             switch(pageId) {
@@ -242,6 +251,135 @@
             }
         }
 
+        // --- CRUD FUNCTIONS ---
+        function openEventModal(id = null) {
+            const modal = document.getElementById('modal-event');
+            document.getElementById('modal-event-title').innerText = id ? 'Edit Event' : 'Tambah Event';
+            document.getElementById('event-id').value = id || '';
+            
+            if(id) {
+                const e = state.events.find(ev => ev.id == id);
+                document.getElementById('event-nama').value = e.nama;
+                document.getElementById('event-tanggal').value = e.tanggal;
+                document.getElementById('event-lokasi').value = e.lokasi;
+            } else {
+                document.getElementById('event-nama').value = '';
+                document.getElementById('event-tanggal').value = '';
+                document.getElementById('event-lokasi').value = '';
+            }
+            toggleModal('modal-event');
+        }
+
+        function saveEvent() {
+            const id = document.getElementById('event-id').value;
+            const data = {
+                id: id || Date.now(),
+                nama: document.getElementById('event-nama').value,
+                tanggal: document.getElementById('event-tanggal').value,
+                lokasi: document.getElementById('event-lokasi').value
+            };
+            
+            if(id) {
+                state.events = state.events.map(e => e.id == id ? data : e);
+            } else {
+                state.events.push(data);
+            }
+            saveState();
+            toggleModal('modal-event');
+            renderEvent();
+            showToast("Event berhasil disimpan!");
+        }
+
+        function openPekerjaModal(id = null) {
+            document.getElementById('modal-pekerja-title').innerText = id ? 'Edit Pekerja' : 'Tambah Pekerja';
+            document.getElementById('pekerja-id').value = id || '';
+            if(id) {
+                const p = state.pekerja.find(pe => pe.id == id);
+                document.getElementById('pekerja-nama').value = p.nama;
+                document.getElementById('pekerja-telp').value = p.telepon;
+            } else {
+                document.getElementById('pekerja-nama').value = '';
+                document.getElementById('pekerja-telp').value = '';
+            }
+            toggleModal('modal-pekerja');
+        }
+
+        function savePekerja() {
+            const id = document.getElementById('pekerja-id').value;
+            const data = {
+                id: id || Date.now(),
+                nama: document.getElementById('pekerja-nama').value,
+                telepon: document.getElementById('pekerja-telp').value
+            };
+            if(id) {
+                state.pekerja = state.pekerja.map(p => p.id == id ? data : p);
+            } else {
+                state.pekerja.push(data);
+            }
+            saveState();
+            toggleModal('modal-pekerja');
+            renderPekerja();
+            showToast("Pekerja berhasil disimpan!");
+        }
+
+        function openJobModal(id = null) {
+            document.getElementById('modal-job-title').innerText = id ? 'Edit Kategori' : 'Tambah Kategori';
+            document.getElementById('job-id').value = id || '';
+            if(id) {
+                const j = state.jenisPekerjaan.find(jo => jo.id == id);
+                document.getElementById('job-nama').value = j.nama;
+                document.getElementById('job-tarif').value = j.tarif;
+            } else {
+                document.getElementById('job-nama').value = '';
+                document.getElementById('job-tarif').value = '';
+            }
+            toggleModal('modal-job');
+        }
+
+        function saveJob() {
+            const id = document.getElementById('job-id').value;
+            const data = {
+                id: id || Date.now(),
+                nama: document.getElementById('job-nama').value,
+                tarif: parseInt(document.getElementById('job-tarif').value)
+            };
+            if(id) {
+                state.jenisPekerjaan = state.jenisPekerjaan.map(j => j.id == id ? data : j);
+            } else {
+                state.jenisPekerjaan.push(data);
+            }
+            saveState();
+            toggleModal('modal-job');
+            renderJenisPekerjaan();
+            showToast("Tarif berhasil disimpan!");
+        }
+
+        function deleteGeneral(key, id) {
+            if(!confirm("Hapus data ini?")) return;
+            state[key] = state[key].filter(i => i.id != id);
+            saveState();
+            showPage(key == 'events' ? 'event' : (key == 'jenisPekerjaan' ? 'jenis-pekerjaan' : 'pekerja'));
+        }
+
+        function savePartisipasi() {
+            const data = {
+                eventId: document.getElementById('sel-event').value,
+                workerId: document.getElementById('sel-worker').value,
+                jobId: document.getElementById('sel-job').value
+            };
+            state.partisipasi.push(data);
+            saveState();
+            renderPartisipasi();
+            showToast("Kehadiran dicatat!");
+        }
+
+        function deletePartisipasi(idx) {
+            state.partisipasi.splice(idx, 1);
+            saveState();
+            renderPartisipasi();
+        }
+
+        // --- RENDERERS ---
         function renderBeranda() {
             const totalGaji = state.partisipasi.reduce((acc, curr) => {
                 const job = state.jenisPekerjaan.find(j => j.id == curr.jobId);
@@ -484,7 +622,7 @@
             return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
         }
 
-        // --- WHATSAPP SHARER ---
+        // --- SLIP & WA ---
         function shareWA(workerId, monthFilter) {
             const worker = state.pekerja.find(w => w.id == workerId);
             if(!worker || !worker.telepon) return alert("Nomor WA pekerja tidak ditemukan!");
@@ -523,198 +661,71 @@
             window.open(`https://wa.me/${phoneFinal}?text=${encodedMsg}`, '_blank');
         }
 
-        // --- SLIP PREVIEW & PRINT ---
         function generateSlip(workerId, monthFilter) {
             const worker = state.pekerja.find(w => w.id == workerId);
             const data = state.partisipasi.filter(p => {
                 const event = state.events.find(e => e.id == p.eventId);
                 return p.workerId == workerId && event && event.tanggal.startsWith(monthFilter);
             });
-            
-            let total = 0;
+
             let itemsHtml = "";
-            
-            data.forEach((p) => {
+            let total = 0;
+            data.forEach(p => {
                 const event = state.events.find(e => e.id == p.eventId);
                 const job = state.jenisPekerjaan.find(j => j.id == p.jobId);
                 if(job) {
                     total += job.tarif;
                     itemsHtml += `
-                        <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <div class="flex justify-between border-b border-dashed py-2">
                             <div>
-                                <div class="font-bold uppercase">${event?.nama || 'N/A'}</div>
-                                <div class="text-[10px] text-slate-500">${event?.tanggal || ''} | ${job.nama}</div>
+                                <p class="font-bold uppercase text-sm">${event.nama}</p>
+                                <p class="text-xs text-slate-500">${event.tanggal} - ${job.nama}</p>
                             </div>
-                            <div class="font-bold text-right">${formatIDR(job.tarif)}</div>
+                            <p class="font-bold">${formatIDR(job.tarif)}</p>
                         </div>
                     `;
                 }
             });
 
-            const dateNow = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-            const periodeLabel = formatMonthLabel(monthFilter);
-
             document.getElementById('slip-content').innerHTML = `
-                <div class="text-center mb-6 border-b-2 border-slate-900 pb-4">
-                    <h2 class="text-xl font-bold uppercase">EventPay Decoration</h2>
-                    <p class="text-[10px] italic">Sumenep, Madura - Jawa Timur</p>
+                <div class="text-center mb-8 border-b-2 border-slate-900 pb-4">
+                    <h2 class="text-2xl font-bold uppercase tracking-widest">EventPay Decoration</h2>
+                    <p class="text-sm">Official Payroll Slip - ${formatMonthLabel(monthFilter)}</p>
                 </div>
-
-                <div class="mb-4 text-center">
-                    <span class="bg-slate-900 text-white px-3 py-1 text-[10px] font-bold rounded">SLIP GAJI ${periodeLabel}</span>
-                </div>
-
-                <div class="mb-6 flex justify-between text-xs">
+                <div class="mb-6 grid grid-cols-2 text-sm">
                     <div>
-                        <p class="text-slate-500 uppercase">Nama Kru:</p>
-                        <p class="text-lg font-bold uppercase">${worker?.nama || 'N/A'}</p>
+                        <p class="text-slate-500 uppercase text-xs font-bold">Nama Penerima</p>
+                        <p class="font-bold text-lg uppercase">${worker.nama}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-slate-500 uppercase">Cetak:</p>
-                        <p class="font-bold">${dateNow}</p>
+                        <p class="text-slate-500 uppercase text-xs font-bold">Tanggal Cetak</p>
+                        <p class="font-bold">${new Date().toLocaleDateString('id-ID')}</p>
                     </div>
                 </div>
-
-                <div class="space-y-1 mb-6 min-h-[150px]">
-                    ${itemsHtml || '<div class="py-10 text-center text-slate-400">Rincian kosong</div>'}
+                <div class="space-y-2 mb-8">
+                    <p class="text-xs font-bold uppercase border-b-2 border-slate-800 pb-1">Rincian Pekerjaan</p>
+                    ${itemsHtml}
                 </div>
-
-                <div class="bg-slate-100 p-4 rounded flex justify-between items-center mb-10">
-                    <span class="font-bold uppercase">Grand Total</span>
-                    <span class="text-xl font-bold text-blue-700">${formatIDR(total)}</span>
+                <div class="bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+                    <p class="font-bold uppercase">Total Diterima</p>
+                    <p class="text-xl font-bold underline underline-offset-4">${formatIDR(total)}</p>
                 </div>
-
-                <div class="grid grid-cols-2 text-center text-[10px] mt-10">
+                <div class="mt-12 grid grid-cols-2 text-center text-xs italic">
                     <div>
-                        <p class="mb-12">Penerima,</p>
-                        <p class="font-bold uppercase border-t pt-2 border-slate-300 mx-10">${worker?.nama || 'Penerima'}</p>
+                        <p class="mb-10 uppercase font-bold tracking-widest">Admin</p>
+                        <p>( ........................ )</p>
                     </div>
                     <div>
-                        <p class="mb-12">Bendahara,</p>
-                        <p class="font-bold uppercase border-t pt-2 border-slate-300 mx-10">Admin EventPay</p>
+                        <p class="mb-10 uppercase font-bold tracking-widest">Pekerja</p>
+                        <p>( ${worker.nama.toUpperCase()} )</p>
                     </div>
                 </div>
             `;
-
             toggleModal('modal-slip');
         }
 
-        // --- CRUD LOGIC (tetap sama) ---
-        function openEventModal(id = null) {
-            document.getElementById('event-id').value = id || "";
-            if (id) {
-                const event = state.events.find(e => e.id == id);
-                document.getElementById('modal-event-title').innerText = "Edit Event";
-                document.getElementById('event-nama').value = event.nama;
-                document.getElementById('event-tanggal').value = event.tanggal;
-                document.getElementById('event-lokasi').value = event.lokasi;
-            } else {
-                document.getElementById('modal-event-title').innerText = "Tambah Event";
-                document.getElementById('event-nama').value = "";
-                document.getElementById('event-tanggal').value = "";
-                document.getElementById('event-lokasi').value = "";
-            }
-            toggleModal('modal-event');
-        }
-
-        function saveEvent() {
-            const id = document.getElementById('event-id').value;
-            const nama = document.getElementById('event-nama').value;
-            const tanggal = document.getElementById('event-tanggal').value;
-            const lokasi = document.getElementById('event-lokasi').value;
-            if (!nama || !tanggal) return alert("Lengkapi data!");
-            if (id) {
-                const idx = state.events.findIndex(e => e.id == id);
-                state.events[idx] = { ...state.events[idx], nama, tanggal, lokasi };
-            } else {
-                state.events.push({ id: "ev-" + Date.now(), nama, tanggal, lokasi });
-            }
-            saveState(); toggleModal('modal-event'); renderEvent(); showToast("Event diperbarui");
-        }
-
-        function openPekerjaModal(id = null) {
-            document.getElementById('pekerja-id').value = id || "";
-            if (id) {
-                const p = state.pekerja.find(item => item.id == id);
-                document.getElementById('modal-pekerja-title').innerText = "Edit Pekerja";
-                document.getElementById('pekerja-nama').value = p.nama;
-                document.getElementById('pekerja-telp').value = p.telepon;
-            } else {
-                document.getElementById('modal-pekerja-title').innerText = "Tambah Pekerja";
-                document.getElementById('pekerja-nama').value = "";
-                document.getElementById('pekerja-telp').value = "";
-            }
-            toggleModal('modal-pekerja');
-        }
-
-        function savePekerja() {
-            const id = document.getElementById('pekerja-id').value;
-            const nama = document.getElementById('pekerja-nama').value;
-            const telp = document.getElementById('pekerja-telp').value;
-            if (!nama) return;
-            if (id) {
-                const idx = state.pekerja.findIndex(p => p.id == id);
-                state.pekerja[idx] = { ...state.pekerja[idx], nama, telepon: telp };
-            } else {
-                state.pekerja.push({ id: "wk-" + Date.now(), nama, telepon: telp });
-            }
-            saveState(); toggleModal('modal-pekerja'); renderPekerja(); showToast("Data pekerja disimpan");
-        }
-
-        function openJobModal(id = null) {
-            document.getElementById('job-id').value = id || "";
-            if (id) {
-                const j = state.jenisPekerjaan.find(item => item.id == id);
-                document.getElementById('modal-job-title').innerText = "Edit Kategori";
-                document.getElementById('job-nama').value = j.nama;
-                document.getElementById('job-tarif').value = j.tarif;
-            } else {
-                document.getElementById('modal-job-title').innerText = "Tambah Kategori";
-                document.getElementById('job-nama').value = "";
-                document.getElementById('job-tarif').value = "";
-            }
-            toggleModal('modal-job');
-        }
-
-        function saveJob() {
-            const id = document.getElementById('job-id').value;
-            const nama = document.getElementById('job-nama').value;
-            const tarif = document.getElementById('job-tarif').value;
-            if (!nama || !tarif) return;
-            if (id) {
-                const idx = state.jenisPekerjaan.findIndex(j => j.id == id);
-                state.jenisPekerjaan[idx] = { ...state.jenisPekerjaan[idx], nama, tarif: parseInt(tarif) };
-            } else {
-                state.jenisPekerjaan.push({ id: "jb-" + Date.now(), nama, tarif: parseInt(tarif) });
-            }
-            saveState(); toggleModal('modal-job'); renderJenisPekerjaan(); showToast("Tarif disimpan");
-        }
-
-        function deleteGeneral(type, id) {
-            if (confirm("Data akan dihapus permanen. Lanjutkan?")) {
-                state[type] = state[type].filter(item => item.id != id);
-                saveState();
-                showPage(type === 'jenisPekerjaan' ? 'jenis-pekerjaan' : (type === 'events' ? 'event' : type));
-            }
-        }
-
-        function savePartisipasi() {
-            const evId = document.getElementById('sel-event').value;
-            const wkId = document.getElementById('sel-worker').value;
-            const jbId = document.getElementById('sel-job').value;
-            if (!evId || !wkId || !jbId) return;
-            state.partisipasi.push({ eventId: evId, workerId: wkId, jobId: jbId });
-            saveState(); renderPartisipasi(); showToast("Absensi tercatat");
-        }
-
-        function deletePartisipasi(index) {
-            const realIdx = state.partisipasi.length - 1 - index;
-            state.partisipasi.splice(realIdx, 1);
-            saveState(); renderPartisipasi();
-        }
-
+        // Init App
         window.onload = () => showPage('beranda');
-
     </script>
 </body>
 </html>
